@@ -1,24 +1,41 @@
 /**
  * Dec 5, 2019
  * Frederick Lee
- * 
+ *
  * https://web.compass.lighthouselabs.ca/days/w02d4/activities/892
  */
 
 const request = require('request');
-const {handleCatDbSearch} = require('./handleCatDbSearch');
 
+const CAT_NOT_FOUND_MSG = cat => `"${cat}" was not found.`;
 
+/**
+ * get the description of the cat using theCatAPI
+ * @param {string} breedName: name of cat
+ * @param {function} callback (error, description)
+ *    error - null if successful
+ *    description - null if failure
+ */
+const fetchBreedDescription = (breedName, callback) => {
+  const theCatApiUrl = 'https://api.thecatapi.com/v1/breeds/';
+  request(`${theCatApiUrl}search?q=${breedName}`, (err, response, body) => {
+    let result = '';
 
+    if (err) {
+      result = 'There was an error getting the information. Error: ', err.code;
+    } else {
+      const data = JSON.parse(body)[0];
 
-const theCatApiUrl = 'https://api.thecatapi.com/v1/breeds/';
-const badUrl = 'https://api.theatapi.com/notaversion/breeds';
-let catToLookUp = '';
+      if (!data) {
+        result = CAT_NOT_FOUND_MSG(breedName);
+      } else {
+        result = data.description;
+      }
+    }
+    callback(err, result);
+  });
+};
 
-const cliArgs = process.argv.slice(2);
-catToLookUp = cliArgs[0];
-
-request(`${theCatApiUrl}search?q=${catToLookUp}`,
-  (err, resp, body) => handleCatDbSearch(err, resp, body, catToLookUp));
-request(`${badUrl}search?q=${catToLookUp}`,
-  (err, resp, body) => handleCatDbSearch(err, resp, body, catToLookUp));
+module.exports = {
+  fetchBreedDescription,
+};
